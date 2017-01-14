@@ -14,12 +14,14 @@ elif [ $H -gt 18 ]; then H=18
 fi
 
 # hour list
-HOURS=($(seq -f '%03g' -s ' ' 0 3 384))
+HOURS=($(seq -f '%03g' -s ' ' 0 3 6))
 
 # generate url list
 URL_LIST=$(for x in $HOURS; do printf "$BASE_URL\n" $YMD $H $H $x; done)
 
 # download the grib files
-echo $URL_LIST | xargs -n1 -P8 wget 
+echo $URL_LIST | xargs -n1 -P8 wget -P /weather
+
+
 
 
