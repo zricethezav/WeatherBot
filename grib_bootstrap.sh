@@ -1,4 +1,9 @@
 #!/bin/zsh
+# 
+# TODO: Set up arguments to reinstall or choose which libraries you want installed
+# 01-14-17
+#
+
 INSTALL_DIR=/usr/bin/
 GRIB_TAR="grib_api-1.19.0-Source.tar.gz?api=v2"
 GRIB_SOURCE="grib_api-1.19.0-Source"
@@ -18,7 +23,7 @@ else
     echo "libjasper-dev already installed"
 fi
 
-# pull and build grib api
+# install grib_api
 if ! [ -x /usr/local/include/grib_api ]; then
     if ! [ -d grib_build ]; then mkdir grib_build; fi 
     cd grib_build
@@ -54,5 +59,24 @@ if ! [ -f /usr/local/lib/python2.7/dist-packages/pygrib.so ]; then
 else
     echo "PyGrib already installed"
 fi
+
+# install wgrib2 for grb->csv
+# http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/csv.html
+if ! [ -x /usr/bin/wgrib2 ]; then 
+    wget ftp://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz
+    tar -xzvf wgrib2.tgz 
+    cd grib2
+    export CC=gcc
+    export FC=gfortran
+    make
+    cd ../
+    echo $PWD
+    cp grib2/wgrib2/wgrib2 /usr/bin
+    rm wgrib2.tgz
+    rm -rf grib2
+else
+    echo "wgrib2 already installed"
+fi
+
 
 
