@@ -1,4 +1,13 @@
-#!/bin/zsh
+#!/bin/bash
+
+
+# arg1 - url for an individual hour
+# extracts products from grib files and marshals them into 
+# *postgres... subject to change datastore
+marshalwx() {
+    wget -P "$PWD/weather" $1
+}
+export -f marshalwx
 
 BASE_URL='http://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/gfs.%s%s/gfs.t%sz.pgrb2.0p50.f%s'
 
@@ -17,10 +26,10 @@ fi
 HOURS=($(seq -f '%03g' -s ' ' 0 3 6))
 
 # generate url list
-URL_LIST=$(for x in $HOURS; do printf "$BASE_URL\n" $YMD $H $H $x; done)
+URL_LIST=$(for x in ${HOURS[@]}; do printf "$BASE_URL\n" $YMD $H $H $x; done)
 
-# download the grib files
-echo $URL_LIST | xargs -n1 -P8 wget -P weather/
+# download the grib files and marshal into postgres
+echo $URL_LIST | xargs -n1 -P8 bash -c 'marshalwx "$@"' _ 
 
 # References:
 #
@@ -35,5 +44,10 @@ echo $URL_LIST | xargs -n1 -P8 wget -P weather/
 # Wind Speed:
 #   - WIND
 # wgrib2 -match TMP:surface:anl: weather/gfs.t12z.pgrb2.0p50.f000 -csv tmp
+#
+
+
+
+
 
 
