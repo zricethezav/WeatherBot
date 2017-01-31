@@ -6,8 +6,17 @@
 # *postgres... subject to change datastore
 marshalwx() {
     wget -P "$PWD/weather" $1
+    FILENAME="$(cut -d'/' -f10 <<<"$1")"
+    # throw temps into csv
+    wgrib2 -match "TMP:surface:" "weather/$FILENAME" -csv "$PWD/tmp/TMP_$FILENAME"
+    # marshal data from csv into redis via a little python script
+    python "$PWD/marshal_wx.py" "$FILENAME"
+    # remove csv and grib files
 }
 export -f marshalwx
+
+# mkdir for tmp csv grib files
+mkdir -p "$PWD/tmp"
 
 BASE_URL='http://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/gfs.%s%s/gfs.t%sz.pgrb2.0p50.f%s'
 
@@ -16,8 +25,9 @@ YMD=$(date -u +"%Y%m%d")
 H=$(date -u +"%H")
 
 # determine utc hour
-if [ $H -ge 0 -a $H -le 8 ]; then H=0
-elif [ $H -gt 8 -a $H -le 14 ]; then H=6
+if [ $H -le 2 ]; then H=18; YMD=$(date -u +"%Y%m%d" -d "1 days ago"); 
+elif [ $H -ge 4 -a $H -le 8 ]; then H=00
+elif [ $H -gt 8 -a $H -le 14 ]; then H=06
 elif [ $H -gt 14 -a $H -le 20 ]; then H=12
 elif [ $H -gt 20 ]; then H=18
 fi
