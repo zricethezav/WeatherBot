@@ -9,9 +9,7 @@ marshalwx() {
     FILENAME="$(cut -d'/' -f10 <<<"$1")"
     # throw temps into csv
     wgrib2 -match "TMP:surface:" "weather/$FILENAME" -csv "$PWD/tmp/TMP_$FILENAME"
-    # marshal data from csv into redis via a little python script
-    python "$PWD/marshal_wx.py" "$FILENAME"
-    # remove csv and grib files
+    # TODO psql command to marshal data into postgis
 }
 export -f marshalwx
 
@@ -40,6 +38,8 @@ URL_LIST=$(for x in ${HOURS[@]}; do printf "$BASE_URL\n" $YMD $H $H $x; done)
 
 # download the grib files and marshal into postgres
 echo $URL_LIST | xargs -n1 -P8 bash -c 'marshalwx "$@"' _ 
+
+
 
 # References:
 #
