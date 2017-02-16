@@ -32,15 +32,14 @@ postgis() {
     # create weather database
     sudo -u postgres createdb weather
     sudo -u postgres psql -c "CREATE EXTENSION postgis;" weather
-	sudo -u postgres -H -- psql -d weather -c "create table tmp(
+	sudo -u postgres -H -- psql -d weather -c "create table data(
 	  id serial not null,
-	  analysis_utc timestamp,
+      analysis_utc timestamp,
 	  start_forecast_utc timestamp,
-	  field varchar(4),
-	  field_level varchar(64),
 	  longitude real,
 	  latitude real,
-	  grid_value real,
+	  tmp real,
+	  pwat real,
 	  long_lat geography(point,4326)
 	);"
 
