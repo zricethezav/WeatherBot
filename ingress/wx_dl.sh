@@ -25,7 +25,7 @@ BASE_URL='http://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/gfs.%s%s/gfs.t%sz.
 YMD=$(date -u +"%Y%m%d")
 H=$(date -u +"%H")
 # hours array
-HOURS=($(seq -f '%03g' -s ' ' 0 3 6))
+HOURS=($(seq -f '%03g' -s ' ' 0 3 380))
 
 # arg1 - url for an individual hour
 # extracts products from grib files and marshals them into 
@@ -55,8 +55,6 @@ marshalwx() {
 		tmp,
         pwat
 		) from '$FILTER_CSV' with (format csv);"
-	sudo -u postgres -H -- psql -d weather -c "update data
-		set long_lat = ST_GeographyFromText('SRID=4326;POINT(' || longitude || ' ' || latitude || ')');"
     # remove old forecast
     rm $PWAT_FILENAME $TMP_FILENAME $MERGED_CSV $FILTER_CSV 
 }
@@ -81,11 +79,6 @@ echo $URL_LIST | xargs -n1 -P8 bash -c 'marshalwx "$@"' _
 # remove all da shit dirs
 rm -rf filter gribs merged pwat tmp
 
-
-
-
-
-
-
-
+sudo -u postgres -H -- psql -d weather -c "update data
+    set long_lat = ST_GeographyFromText('SRID=4326;POINT(' || longitude || ' ' || latitude || ')');"
 
