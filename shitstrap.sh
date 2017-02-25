@@ -14,6 +14,7 @@ APP_DB_NAME=weather
 
 # --------------------------------------------------------
 # Install PostGIS
+# --------------------------------------------------------
 postgis() {
     if ! [ -x /usr/bin/psql ]; then
         echo *** Installing PostGres/PostGIS ***
@@ -53,12 +54,12 @@ postgis() {
 	  pwat real,
 	  long_lat geography(point,4326)
 	);"
-
 }
 
 
 # --------------------------------------------------------
 # install wgrib2 for grb->csv
+# --------------------------------------------------------
 # http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/csv.html
 wgrib2() {
     echo *** Installing wgrib2 ***
@@ -73,14 +74,34 @@ wgrib2() {
         cd ../
         echo $PWD
         sudo cp grib2/wgrib2/wgrib2 /usr/bin
-        # rm wgrib2.tgz
-        # rm -rf grib2
+        rm wgrib2.tgz
+        rm -rf grib2
     else
         echo "wgrib2 already installed"
     fi
 }
 
-# --------------
+# --------------------------------------------------------
 # install da shit
+# --------------------------------------------------------
 wgrib2
 postgis
+
+# set crontab
+crontab -l > tmpcron 
+echo "0 */3 * * * cd /home/vagrant/ingress && ./wx_dl.sh" >> tmpcron
+crontab tmpcron
+
+# download wx data
+cd /home/vagrant/ingress && ./wx_dl.sh
+
+
+
+
+
+
+
+
+
+
+
