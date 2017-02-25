@@ -13,6 +13,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision :shell, :path => "shitstrap.sh"
   config.vm.synced_folder "ingress", "/home/vagrant/ingress"
+  config.vm.synced_folder "creds", "/home/vagrant/creds"
 
 end
 

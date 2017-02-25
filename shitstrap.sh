@@ -1,10 +1,16 @@
 #!/bin/bash
 
+# some good shit: https://wiki.postgresql.org/wiki/PostgreSQL_For_Development_With_Vagrant
+#
 # defs
 PG_VERSION=9.4
 PG_CONF="/etc/postgresql/$PG_VERSION/main/postgresql.conf"
 PG_HBA="/etc/postgresql/$PG_VERSION/main/pg_hba.conf"
 PG_DIR="/var/lib/postgresql/$PG_VERSION/main"
+
+APP_DB_USER=$(sed -n '1p' "$PWD/creds/.auth")
+APP_DB_PASS=$(sed -n '2p' "$PWD/creds/.auth")
+APP_DB_NAME=weather
 
 # --------------------------------------------------------
 # Install PostGIS
@@ -28,9 +34,14 @@ postgis() {
     sudo echo "client_encoding = utf8" >> "$PG_CONF"
     # Restart so that all new config is loaded:
     service postgresql restart
-
+    # create weather user
+	sudo -u postgres psql -c "CREATE USER $APP_DB_USER WITH PASSWORD '$APP_DB_PASS';"
     # create weather database
-    sudo -u postgres createdb weather
+	sudo -u postgres psql -c "CREATE DATABASE $APP_DB_NAME WITH OWNER=$APP_DB_USER
+									  LC_COLLATE='en_US.utf8'
+									  LC_CTYPE='en_US.utf8'
+									  ENCODING='UTF8'
+									  TEMPLATE=template0;"
     sudo -u postgres psql -c "CREATE EXTENSION postgis;" weather
 	sudo -u postgres -H -- psql -d weather -c "create table data(
 	  id serial not null,
@@ -68,9 +79,6 @@ wgrib2() {
         echo "wgrib2 already installed"
     fi
 }
-
-
-# TODO setup crontab to schedule psql inserts
 
 # --------------
 # install da shit

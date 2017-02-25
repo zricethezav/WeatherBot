@@ -25,7 +25,7 @@ BASE_URL='http://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/gfs.%s%s/gfs.t%sz.
 YMD=$(date -u +"%Y%m%d")
 H=$(date -u +"%H")
 # hours array
-HOURS=($(seq -f '%03g' -s ' ' 0 3 380))
+HOURS=($(seq -f '%03g' -s ' ' 0 3 6))
 
 # arg1 - url for an individual hour
 # extracts products from grib files and marshals them into 
@@ -44,10 +44,10 @@ marshalwx() {
     # merge two csvs
     awk 'NR==FNR{a[NR]=$0;next}{print a[FNR],$0}' OFS=","  $TMP_FILENAME $PWAT_FILENAME > $MERGED_CSV 
     # filter csv
-	awk -F, '{print $1,$2,$5,$6,$7,$14}' OFS="," $MERGED_CSV > $FILTER_CSV
+    awk -F, '{print $1,$2,$5,$6,$7,$14}' OFS="," $MERGED_CSV > $FILTER_CSV
 
-    # update csv
-    sudo -u postgres -H -- psql -d weather -c "copy data (
+
+    sudo -su postgres -H -- psql -d weather -c "copy tmpdata (
         analysis_utc,
 		start_forecast_utc,
 		longitude,
@@ -55,7 +55,8 @@ marshalwx() {
 		tmp,
         pwat
 		) from '$FILTER_CSV' with (format csv);"
-    # remove old forecast
+
+
     rm $PWAT_FILENAME $TMP_FILENAME $MERGED_CSV $FILTER_CSV 
 }
 
@@ -73,12 +74,32 @@ fi
 # generate url list
 URL_LIST=$(for x in ${HOURS[@]}; do printf "$BASE_URL\n" $YMD $H $H $x; done)
 
+# boom
+
+sudo -u postgres -H -- psql -d weather -c "DROP TABLE IF EXISTS tmpdata;"
+sudo -u postgres -H -- psql -d weather -c "create table tmpdata(
+	  id serial not null,
+      analysis_utc timestamp,
+	  start_forecast_utc timestamp,
+	  longitude real,
+	  latitude real,
+	  tmp real,
+	  pwat real,
+	  long_lat geography(point,4326)
+	);"
+
 # download the grib files and marshal into postgres
 echo $URL_LIST | xargs -n1 -P8 bash -c 'marshalwx "$@"' _ 
 
 # remove all da shit dirs
 rm -rf filter gribs merged pwat tmp
 
-sudo -u postgres -H -- psql -d weather -c "update data
+# remove old forecast
+ANALYSIS_UTC="$(date +"%Y-%m-%d $H:00:00")"
+# sudo -su postgres -H -- psql -d weather -c "DELETE FROM data WHERE analysis_utc != '$ANALYSIS_UTC'"    
+sudo -u postgres -H -- psql -d weather -c "update tmpdata
     set long_lat = ST_GeographyFromText('SRID=4326;POINT(' || longitude || ' ' || latitude || ')');"
+sudo -u postgres -H -- psql -d weather -c "BEGIN; ALTER TABLE data RENAME TO olddata; ALTER TABLE tmpdata RENAME TO data; DROP TABLE olddata; COMMIT;"
+
+
 
