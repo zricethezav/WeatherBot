@@ -46,7 +46,6 @@ marshalwx() {
     # filter csv
     awk -F, '{print $1,$2,$5,$6,$7,$14}' OFS="," $MERGED_CSV > $FILTER_CSV
 
-
     sudo -su postgres -H -- psql -d weather -c "copy tmpdata (
         analysis_utc,
 		start_forecast_utc,
@@ -66,8 +65,8 @@ export -f marshalwx
 # determine utc hour
 if [ $H -le 2 ]; then H=18; YMD=$(date -u +"%Y%m%d" -d "1 days ago"); 
 elif [ $H -ge 4 -a $H -le 8 ]; then H=00
-elif [ $H -gt 8 -a $H -le 14 ]; then H=06
-elif [ $H -gt 14 -a $H -le 22 ]; then H=12
+elif [ $H -gt 8 -a $H -le 16 ]; then H=06
+elif [ $H -gt 16 -a $H -le 22 ]; then H=12
 elif [ $H -gt 22 ]; then H=18
 fi
 
@@ -96,10 +95,10 @@ rm -rf filter gribs merged pwat tmp
 
 # remove old forecast
 ANALYSIS_UTC="$(date +"%Y-%m-%d $H:00:00")"
-# sudo -su postgres -H -- psql -d weather -c "DELETE FROM data WHERE analysis_utc != '$ANALYSIS_UTC'"    
+sudo -su postgres -H -- psql -d weather -c "DELETE FROM data WHERE analysis_utc != '$ANALYSIS_UTC'"    
 sudo -u postgres -H -- psql -d weather -c "update tmpdata
     set long_lat = ST_GeographyFromText('SRID=4326;POINT(' || longitude || ' ' || latitude || ')');"
-sudo -u postgres -H -- psql -d weather -c "BEGIN; ALTER TABLE data RENAME TO olddata; ALTER TABLE tmpdata RENAME TO data; DROP TABLE olddata; COMMIT;"
+sudo -u postgres -H -- psql -d weather -c "BEGIN; ALTER TABLE data RENAME TO olddata; ALTER TABLE tmpdata RENAME TO data; DROP TABLE olddata; GRANT ALL PRIVILEGES ON TABLE data TO $PG_USEzachriceweatherR; COMMIT;"
 
 
 

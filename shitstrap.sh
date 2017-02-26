@@ -3,7 +3,7 @@
 # some good shit: https://wiki.postgresql.org/wiki/PostgreSQL_For_Development_With_Vagrant
 #
 # defs
-PG_VERSION=9.4
+PG_VERSION="9.4"
 PG_CONF="/etc/postgresql/$PG_VERSION/main/postgresql.conf"
 PG_HBA="/etc/postgresql/$PG_VERSION/main/pg_hba.conf"
 PG_DIR="/var/lib/postgresql/$PG_VERSION/main"
@@ -54,6 +54,7 @@ postgis() {
 	  pwat real,
 	  long_lat geography(point,4326)
 	);"
+	sudo -u postgres -H -- psql -d weather -c "GRANT ALL PRIVILEGES ON TABLE data TO $APP_DB_USER;"
 }
 
 
